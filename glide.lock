@@ -1,12 +1,14 @@
-hash: 43017bc74b202d332d1654c8eddd004aeaff12e9dd381ef8fd50aa11b5d8a70b
-updated: 2017-07-15T15:07:37.366934589+02:00
+hash: 09bfa9e107516d57e2437986643224a22d13b23879f42a38df54b5080b47430b
+updated: 2018-07-06T14:15:18.562434367+02:00
 imports:
-- name: github.com/BurntSushi/toml
-  version: bbd5bb678321a0d6e58f1099321dfa73391c1b6f
+- name: github.com/gocarina/gocsv
+  version: 45cbb9cde54ea46d800c4fcd1a686949ac6d87a3
 - name: github.com/mattn/go-zglob
-  version: 95345c4e1c0ebc9d16a3284177f09360f4d20fab
+  version: 4959821b481786922ac53e7ef25c61ae19fb7c36
   subpackages:
   - fastwalk
+- name: github.com/multiplay/go-rrd
+  version: 4a70b1d94ccb5879ae2839ce51dd34c27787dd6c
 - name: github.com/ziutek/rrd
-  version: 9b5311f435c8f7e62f71ffe15b4566e6cf840738
+  version: 86f4f09e7abbf4bfb3912da6c041cabba4e933bc
 testImports: []

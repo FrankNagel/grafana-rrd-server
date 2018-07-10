@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -15,7 +16,8 @@ import (
 
 	"github.com/gocarina/gocsv"
 	"github.com/mattn/go-zglob"
-	"github.com/ziutek/rrd"
+        "github.com/ziutek/rrd"
+	rrdcached "github.com/multiplay/go-rrd"
 )
 
 var config Config
@@ -94,6 +96,7 @@ type ServerConfig struct {
 	IpAddr             string
 	Port               int
 	AnnotationFilePath string
+	RrdCachedSocket    string
 }
 
 type ErrorResponse struct {
@@ -134,8 +137,8 @@ func search(w http.ResponseWriter, r *http.Request) {
 				fmt.Println(err)
 			}
 			for ds, _ := range infoRes["ds.index"].(map[string]interface{}) {
-				result = append(result, fName+":"+ds)
-			}
+						result = append(result, fName+":"+ds)
+					}
 
 			return nil
 		})
@@ -167,6 +170,14 @@ func query(w http.ResponseWriter, r *http.Request) {
 	to, _ := time.Parse(time.RFC3339Nano, queryRequest.Range.To)
 
 	var result []QueryResponse
+	var conn *rrdcached.Client
+	if config.Server.RrdCachedSocket != "" {
+		conn, err = rrdcached.NewClient(config.Server.RrdCachedSocket, rrdcached.Unix)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer conn.Close()
+	}
 	for _, target := range queryRequest.Targets {
 		ds := target.Target[strings.LastIndex(target.Target, ":")+1 : len(target.Target)]
 		rrdDsRep := regexp.MustCompile(`:` + ds + `$`)
@@ -179,6 +190,13 @@ func query(w http.ResponseWriter, r *http.Request) {
 			if _, err = os.Stat(filePath); err != nil {
 				fmt.Println("File", filePath, "does not exist")
 				continue
+			}
+			if conn != nil {
+				err = conn.Flush(filePath)
+				if err != nil {
+					fmt.Println("ERROR: Cannot get rrdcached to flush ", filePath)
+					fmt.Println(err)
+				}
 			}
 			infoRes, err := rrd.Info(filePath)
 			if err != nil {
@@ -269,6 +287,7 @@ func SetArgs() {
 	flag.StringVar(&config.Server.RrdPath, "r", "./sample/", "Path for a directory that keeps RRD files.")
 	flag.IntVar(&config.Server.Step, "s", 10, "Step in second.")
 	flag.StringVar(&config.Server.AnnotationFilePath, "a", "", "Path for a file that has annotations.")
+	flag.StringVar(&config.Server.RrdCachedSocket, "c", "", "Path to RRDCached socket, i.e. \"/var/run/rrdcached.sock\".")
 	flag.Parse()
 }
 
